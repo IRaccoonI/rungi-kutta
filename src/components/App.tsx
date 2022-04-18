@@ -1,12 +1,24 @@
 import React from "react";
 import { Button } from "react-bootstrap";
-import { GearFill } from "react-bootstrap-icons";
+import { GearFill, PlayFill } from "react-bootstrap-icons";
 import styled, { createGlobalStyle } from "styled-components";
+import { MAX_POINTS_HISTORY_DEPS } from "../constants/holst";
+import { RungiModel } from "../constants/models";
+import { MAX_DEPS } from "../constants/rungi";
+import {
+  lenPts,
+  model1,
+  model1NextFrame,
+  model2,
+  powSumSqrt,
+} from "../sevices/rungiKutta";
 import { MaterialPoint, Point } from "../types/metric";
 import { Dimensions } from "../types/sizing";
 import FloatingWindow from "./FloatingWindow";
+import HistoryPoints from "./HistoryPoints";
 import Holst from "./Holst";
 import ModelSettings from "./ModelSettings";
+import PlaySettings from "./PlaySettings";
 
 function App() {
   const [holstDimensions, holstSetDimensions] = React.useState<Dimensions>({
@@ -18,13 +30,88 @@ function App() {
     return { x: holstDimensions.width / 2, y: holstDimensions.height / 2 };
   }, [holstDimensions]);
 
+  const [model, setModel] = React.useState(RungiModel.MODEL1);
+
   const [initMaterialPoints, setInitMaterialPoints] = React.useState<
     MaterialPoint[]
   >([]);
 
-  const [isSettingShow, setIsSettingShow] = React.useState(true);
+  const handleChangeInitMaterialPoints = React.useCallback(
+    (newMPts: MaterialPoint[]) => {
+      setInitMaterialPoints(
+        newMPts.map((mPt, idx, arr) => {
+          if (mPt.velocity && model === RungiModel.MODEL1) {
+            const mPtTarget = idx === arr.length - 1 ? arr[0] : arr[idx + 1];
 
-  // const [isMove, setIsMove] = React.useState(false);
+            const velocityVal = powSumSqrt(mPt.velocity.x, mPt.velocity.y);
+            const velocity = {
+              x:
+                (velocityVal * (mPtTarget.point.x - mPt.point.x)) /
+                lenPts(mPt, mPtTarget),
+              y:
+                (velocityVal * (mPtTarget.point.y - mPt.point.y)) /
+                lenPts(mPt, mPtTarget),
+            };
+            return {
+              ...mPt,
+              velocity,
+            };
+          }
+          return mPt;
+        })
+      );
+    },
+    [model]
+  );
+
+  React.useEffect(() => {
+    if (model === RungiModel.MODEL1) {
+      handleChangeInitMaterialPoints(initMaterialPoints);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [model]);
+
+  const [isSettingShow, setIsSettingShow] = React.useState(true);
+  const [isPlaySettingShow, setIsPlaySettingShow] = React.useState(false);
+  const [nIter, setNIter] = React.useState(1);
+  const [hIter, setHIter] = React.useState(1);
+  const [maxPointHistoryDeps, setMaxPointHistoryDeps] = React.useState(
+    MAX_POINTS_HISTORY_DEPS
+  );
+
+  const handleIsSettingShow = React.useCallback((newVal: boolean) => {
+    // if (newVal) setIsPlaySettingShow(false);
+    setIsSettingShow(newVal);
+  }, []);
+
+  const handleIsPlaySettingShow = React.useCallback((newVal: boolean) => {
+    // if (newVal) setIsSettingShow(false);
+    setIsPlaySettingShow(newVal);
+  }, []);
+
+  const allMaterialPointsHistory = React.useMemo(() => {
+    if (!isPlaySettingShow) return [];
+
+    const arr: MaterialPoint[][] = Array(MAX_DEPS).fill(initMaterialPoints);
+
+    const curModel = model === RungiModel.MODEL1 ? model1 : model2;
+
+    let prevRes: MaterialPoint[] | null = null;
+    return arr.map((mPts) => {
+      prevRes = prevRes ? model1NextFrame(curModel, prevRes, hIter) : mPts;
+      return prevRes;
+    });
+  }, [hIter, initMaterialPoints, isPlaySettingShow, model]);
+
+  const materialPointsHistory = React.useMemo(() => {
+    if (!isPlaySettingShow) return [];
+
+    return allMaterialPointsHistory.slice(0, nIter);
+  }, [allMaterialPointsHistory, isPlaySettingShow, nIter]);
+
+  React.useEffect(() => {
+    setNIter(1);
+  }, [isPlaySettingShow]);
 
   return (
     <StyledApp>
@@ -34,40 +121,56 @@ function App() {
       <ToolButtons>
         <Button
           variant="outline-success"
-          onClick={() => setIsSettingShow((p) => !p)}
+          onClick={() => handleIsSettingShow(!isSettingShow)}
           active={isSettingShow}
+          className="me-1"
         >
           <GearFill size={26.5} />
         </Button>
+        <Button
+          variant="outline-success"
+          onClick={() => handleIsPlaySettingShow(!isPlaySettingShow)}
+          active={isPlaySettingShow}
+        >
+          <PlayFill size={26.5} />
+        </Button>
       </ToolButtons>
-      <FloatingWindow isShow={isSettingShow}>
+      <FloatingWindow isShow={isSettingShow} position={{ top: 60, right: 9 }}>
         <ModelSettings
           materialPoints={initMaterialPoints}
-          onChangeMaterialPoints={setInitMaterialPoints}
+          onChangeMaterialPoints={handleChangeInitMaterialPoints}
           initPointPosition={holstCenter}
-          // headerControl={
-          //   <Row>
-          //     <Col sm={3}>
-          //       <Button
-          //         className="w-100 mb-2"
-          //         size="sm"
-          //         variant="outline-warning"
-          //         active={isMove}
-          //         onClick={() => setIsMove((p) => !p)}
-          //       >
-          //         <ArrowsMove size={21} />
-          //       </Button>
-          //     </Col>
-          //   </Row>
-          // }
+          model={model}
+          onChangeModel={setModel}
+        />
+      </FloatingWindow>
+
+      <FloatingWindow
+        isShow={isPlaySettingShow}
+        position={{ bottom: 9, right: 9 }}
+      >
+        <PlaySettings
+          nIter={nIter}
+          onChangeNIter={setNIter}
+          hIter={hIter}
+          onChangeHIter={setHIter}
+          maxPointHistoryDeps={maxPointHistoryDeps}
+          onChangeMaxPointHistoryDeps={setMaxPointHistoryDeps}
         />
       </FloatingWindow>
       <WrapperHolst>
-        <Holst
-          initMaterialPoints={initMaterialPoints}
-          onChangeMaterialPoints={setInitMaterialPoints}
-          onResize={holstSetDimensions}
-        />
+        {isPlaySettingShow ? (
+          <HistoryPoints
+            materialPointsHistory={materialPointsHistory}
+            maxPointHistoryDeps={maxPointHistoryDeps}
+          />
+        ) : (
+          <Holst
+            initMaterialPoints={initMaterialPoints}
+            onChangeMaterialPoints={handleChangeInitMaterialPoints}
+            onResize={holstSetDimensions}
+          />
+        )}
       </WrapperHolst>
     </StyledApp>
   );

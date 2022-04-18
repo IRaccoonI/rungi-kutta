@@ -68,6 +68,7 @@ const Holst: React.FC<HolstProps> = ({
   );
 
   React.useLayoutEffect(onResize, [onResize]);
+
   React.useEffect(() => {
     window.addEventListener("resize", onResize);
     return () => {
@@ -95,17 +96,31 @@ const Holst: React.FC<HolstProps> = ({
             <polygon points="0 0, 10 3.5, 0 7" />
           </marker>
         </defs>
-        {materialPoints.map(({ point, velocity }, idx) => {
-          return (
-            <>
-              <DraggableCircle
-                position={point}
-                onChangePosition={onChangePtPosition(idx)}
-              />
-              {velocity ? <Vector position={point} vector={velocity} /> : null}
-            </>
-          );
-        })}
+        {materialPoints.map(
+          ({ point, velocity, color = "#000", weight }, idx) => {
+            return (
+              <>
+                <DraggableCircle
+                  key={idx + "_1"}
+                  position={point}
+                  onChangePosition={onChangePtPosition(idx)}
+                  color={color}
+                  radius={weight}
+                />
+                {velocity &&
+                (Math.abs(velocity.x) > 0.001 ||
+                  Math.abs(velocity.y) > 0.001) ? (
+                  <Vector
+                    key={idx + "_2"}
+                    position={point}
+                    vector={velocity}
+                    color={color}
+                  />
+                ) : null}
+              </>
+            );
+          }
+        )}
       </svg>
     </StyledHolst>
   );

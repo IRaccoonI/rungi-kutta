@@ -1,14 +1,19 @@
 import React from "react";
+import { CIRCLE_RADIUS } from "../constants/holst";
 import { Point } from "../types/metric";
 
 interface DraggableCircleProps {
   position: Point;
   onChangePosition: (newPt: Point) => unknown;
+  color?: string;
+  radius?: number;
 }
 
 const DraggableCircle: React.FC<DraggableCircleProps> = ({
   position,
   onChangePosition,
+  color = "#000",
+  radius,
 }) => {
   const [offset, setOffset] = React.useState<Point>({ x: 0, y: 0 });
 
@@ -45,11 +50,11 @@ const DraggableCircle: React.FC<DraggableCircleProps> = ({
     <circle
       cx={position.x}
       cy={position.y}
-      r={4}
+      r={CIRCLE_RADIUS * Math.sqrt(radius || 1 / 3)}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerMove={handlePointerMove}
-      fill={isActive ? "blue" : "black"}
+      fill={isActive ? "blue" : color}
     />
   );
 };
