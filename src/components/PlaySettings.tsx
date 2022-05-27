@@ -23,6 +23,7 @@ const PlaySettings: React.FC<PlaySettingsProps> = ({
   return (
     <WrapperForm className="px-1">
       <div className="d-flex align-items-center w-100 mb-2">
+        <HintSlider className="me-3">HistDeps:</HintSlider>
         <InputSlider
           axis="x"
           x={maxPointHistoryDeps}
@@ -38,6 +39,7 @@ const PlaySettings: React.FC<PlaySettingsProps> = ({
         <SliderLabel className="ms-2">{maxPointHistoryDeps}</SliderLabel>
       </div>
       <div className="d-flex align-items-center w-100 mb-2">
+        <HintSlider className="me-3">Iter:</HintSlider>
         <InputSlider
           axis="x"
           x={nIter}
@@ -54,6 +56,7 @@ const PlaySettings: React.FC<PlaySettingsProps> = ({
       </div>
 
       <div className="d-flex align-items-center w-100">
+        <HintSlider className="me-3">Rungi t:</HintSlider>
         <InputSlider
           axis="x"
           x={hIter}
@@ -80,6 +83,10 @@ const WrapperForm = styled.div`
 
 const SliderLabel = styled.span`
   width: 32px;
+`;
+
+const HintSlider = styled.span`
+  width: 70px;
 `;
 
 export default React.memo(PlaySettings);

@@ -35,19 +35,6 @@ const Holst: React.FC<HolstProps> = ({
     }
   }, []);
 
-  // const pointToHolst = React.useCallback(
-  //   (materialPoint: MaterialPoint): MaterialPoint => {
-  //     return {
-  //       ...materialPoint,
-  //       point: {
-  //         x: materialPoint.point.x,
-  //         y: -materialPoint.point.y + dimensions.height,
-  //       },
-  //     };
-  //   },
-  //   [dimensions.height]
-  // );
-
   const onUpdatePoint = React.useCallback(
     (newPoint: MaterialPoint, index: number) => {
       const newPoints = materialPoints.map((pt, idx) =>
